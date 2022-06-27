@@ -1,0 +1,164 @@
+name: React_node.yml
+
+on:
+  pull_request:
+    types: [opened]
+    branches: [ dev ]
+env:
+  PR: ${{ github.event.pull_request.title }} 
+  
+#permissions:
+  #contents: writepull-requests:write
+  #pull-requests: write
+  
+jobs:
+  build:
+   # if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+        
+    outputs:
+      output1: ${{ steps.step1.outputs.test }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: npm install 
+
+    - name: Run the cypress tests
+      run: npm test
+
+    - name: Build
+      run: npm run build
+      env:
+          CI: ""
+    - name: Generate deployment package
+      run: zip -r build.zip ./build/*
+      
+    - id: step1
+      run: echo "::set-output name=test::trial-fe-pr-${PR}-env.ci-workflow.indium-poc.co.in"
+
+    - name: Nginx Config File builder
+      run: |
+          echo "server {"  >> ${PR}.conf
+          echo "     listen 80;" >> ${PR}.conf
+          echo "     listen [::]:80;" >> ${PR}.conf
+          echo "     server_name ${{ steps.step1.outputs.test }};" >> ${PR}.conf
+
+          echo "     root /home/ubuntu/${PR}/build;" >> ${PR}.conf
+
+          echo "     index index.html index.htm;" >> ${PR}.conf
+
+          echo "     location / {" >> ${PR}.conf
+          echo "         try_files \$uri \$uri/ =404;" >> ${PR}.conf
+          echo "     }" >> ${PR}.conf
+          echo "}" >> ${PR}.conf
+
+    - name: Copy Build Artifacts & Deploy
+      uses: cross-the-world/ssh-scp-ssh-pipelines@latest
+      env:
+        LASTSSH: "Storing the Build Artifact in a separate location"
+      with:
+        host: ${{ secrets.HOSTNAME }}
+        user: ${{ secrets.USERNAME }}
+        key: ${{ secrets.AWS_PRIVATE_KEY }}
+        connect_timeout: 10s
+        first_ssh: |
+          rm -rf /home/ubuntu/${PR} 
+          mkdir -p /home/ubuntu/${PR}
+          mkdir -p /home/ubuntu/nginxconf/
+        scp: |
+          './${PR}.conf' => /home/ubuntu/nginxconf/
+          './build.zip' => /home/ubuntu/${PR}/
+        last_ssh: |
+          echo $LASTSSH  
+          unzip /home/ubuntu/${PR}/build.zip -d /home/ubuntu/${PR}/
+          mv /home/ubuntu/${PR}/build.zip /tmp/${PR}.zip
+          sh /home/ubuntu/.script/restart_nginx
+          ls -ll /tmp/
+          
+    - name: "Create an A record set"
+      uses: Roosterfish/aws-route53-record-set-action@master
+      with: 
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws_route53_hosted_zone_id: ${{ secrets.AWS_ROUTE53_HOSTED_ZONE_ID }}
+        aws_route53_rr_action: "CREATE"
+        aws_route53_rr_name: ${{ steps.step1.outputs.test }}
+        aws_route53_rr_type: "A"
+        aws_route53_rr_ttl: "300"
+        aws_route53_rr_value: "43.205.30.201"
+          
+    - name: Add Tag to GitHub
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create a GitHub release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
+    
+    #- name: Tag with Label
+      #uses: actions-ecosystem/action-add-labels@v1
+      #if: ${{ github.event.pull_request.number}}
+      #with:
+        #labels: 'QA Passed'
+
+    #- name: Integration
+      #uses: ./
+      #with:
+        #host: ${{ secrets.JIRA_BASE_URL }}
+        #githubToken: ${{ secrets.GITHUB_TOKEN }}
+        #webhook: ${{ secrets.JIRA_WEBHOOK }}
+        
+    #- name: Link Jira Issue
+      #uses: cchantep/probot-jira@ghaction-1.0.x
+      #env:
+        #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #PERSONAL_TOKEN_VALUE: ${{ secrets.PERSONAL_TOKEN_VALUE }}
+        #PERSONAL_TOKEN_USER: 'avinashcse8@gmail.com'
+        #JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        #JIRA_DOMAIN: 'sachinlaturkar.atlassian.net'
+        #JIRA_USER: 'avinaash.p@indiumsoft.com'
+        #JIRA_PROJECT_NAME: 'RP'
+        #board-name: 'Results-cx'
+        #isCreateIssue: true
+        #appendDescAfterRegex: "Jira Issue Link:"
+    
+    - name: Jira Login
+      uses: atlassian/gajira-login@master
+      env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+    
+    - name: Comment on issue
+      uses: atlassian/gajira-comment@master
+      with:
+        issue: ${{ github.event.pull_request.title }}
+        comment:  http://${{ steps.step1.outputs.test }}
+        
+    - name: Slack Notification
+      uses: act10ns/slack@v1
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      with: 
+        status: ${{ job.status }}
+        notify_when: 'failure'
+        channel: '#results-cx'
+        #message: Deployed {{ env.GITHUB_REF_NAME }} branch Successfully
+      if: always() 
