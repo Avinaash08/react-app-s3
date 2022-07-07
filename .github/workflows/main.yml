@@ -3,10 +3,9 @@ name: main.yml
 on:
   pull_request:
     types: [ assigned, opened, reopened ]
+  issue_comment:
+    types: [created]
     branches: [ main ]
-    
-  pull_request_review:
-    types: [ submitted ]
     
 env:
   PR: ${{ github.event.pull_request.title }} 
@@ -16,7 +15,8 @@ env:
   
 jobs:
   build:
-   #if: github.event.pull_request.merged == true
+    #if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' || github.event_name == 'issue_comment' 
     runs-on: ubuntu-latest
 
     strategy:
