@@ -45,3 +45,4 @@ jobs:
       env:
         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}  
         SOURCE_DIR: 'public'  
+        DEST_DIR: 'resultscx-poc-s3-deployment/folder1/'
