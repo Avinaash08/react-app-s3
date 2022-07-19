@@ -42,8 +42,8 @@ jobs:
     - name: Sync to S3
       uses: raulanatol/aws-s3-docker-action@master
       env:
-        bucket: ${{ secrets.S3_BUCKET }}
-        bucket-region: ${{ secrets.S3_BUCKET_REGION }}
+        AWS_BUCKET_NAME:: ${{ secrets.S3_BUCKET }}
+        AWS_BUCKET_REGION: ${{ secrets.S3_BUCKET_REGION }}
         #SOURCE: 
         TARGET: s3://resultscx-poc-s3-deployment/folder1/
         WITH_DELETE: --delete 
