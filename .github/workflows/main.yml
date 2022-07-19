@@ -43,6 +43,6 @@ jobs:
       with:
         args: --acl public-read --follow-symlinks --delete
       env:
-        AWS_S3_BUCKET: 'resultscx-poc-s3-deployment'
+        AWS_S3_BUCKET: 's3://resultscx-poc-s3-deployment'
         SOURCE_DIR: 'public'  
         DEST_DIR: 'resultscx-poc-s3-deployment/folder1/'
