@@ -26,16 +26,26 @@ jobs:
     - name: Build
       run: npm run build
 
-    - name: Deploy
-      uses: reggionick/s3-deploy@v3
-      with:
-        folder: build
-        bucket: ${{ secrets.S3_BUCKET }}
-        bucket-region: ${{ secrets.S3_BUCKET_REGION }}
-        TARGET: s3://resultscx-poc-s3-deployment/folder1/
-        dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-        invalidation: /
-        delete-removed: true
-        no-cache: true
-        private: true
+    #- name: Deploy
+      #uses: reggionick/s3-deploy@v3
+      #with:
+        #folder: build
+        #bucket: ${{ secrets.S3_BUCKET }}
+        #bucket-region: ${{ secrets.S3_BUCKET_REGION }}
+        #TARGET: s3://resultscx-poc-s3-deployment/folder1/
+        #dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        #invalidation: /
+        #delete-removed: true
+        #no-cache: true
+        #private: true
         
+    - name: Sync to S3
+      uses: raulanatol/aws-s3-docker-action@master
+      env:
+        AWS_BUCKET_NAME: ${{ secrets.S3_BUCKET }}
+        #SOURCE: 
+        TARGET: s3://resultscx-poc-s3-deployment/folder1/
+        WITH_DELETE: --delete 
+        WITH_CLOUD_FRONT_INVALIDATION: /
+        AWS_CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        #AWS_CLOUDFRONT_INVALIDATION_PATH: /
