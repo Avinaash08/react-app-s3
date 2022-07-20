@@ -1,12 +1,17 @@
 name: main.yml
 
 on:
+  pull_request:
+    types: [ opened, reopened, assigned ]
+    branches: [ main ]
   push:
-    #types: [ opened, reopened, assigned ]
-   branches: 
-     - 'dev'
-   paths:
-     - 'src/App.js'
+#     branches-ignore:
+#       - 'main'
+#     types: [created]
+    branches: 
+      - 'feature'
+    paths:
+      - 'src/App.js'
     
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
