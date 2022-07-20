@@ -1,8 +1,8 @@
 name: main.yml
 
 on:
-  pull_request:
-    types: [ opened, reopened, assigned ]
+  push:
+    #types: [ opened, reopened, assigned ]
     
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
