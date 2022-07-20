@@ -69,3 +69,12 @@ jobs:
         AWS_REGION: 'ap-south-1'   
         SOURCE_DIR: 'build'  
         DEST_DIR: ${{ steps.findPr.outputs.number }}
+        
+    - name: Connect to EC2 instance
+      uses: easingthemes/ssh-deploy@main
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.HOST_DNS }}
+        REMOTE_USER: ${{ secrets.USERNAME }}
+#         TARGET: ${{ secrets.TARGET_DIR }}   
+    - run: aws s3 ls
