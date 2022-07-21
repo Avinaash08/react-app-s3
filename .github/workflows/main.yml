@@ -73,7 +73,7 @@ jobs:
         SOURCE_DIR: 'build'  
         DEST_DIR: ${{ steps.findPr.outputs.number }}
 
-    - run: aws cloudfront create-distribution --origin-domain-name resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com --default-root-object index.html > create_distribution.json
+    - run: aws cloudfront create-distribution --origin-domain-name resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com --default-root-object index.html > /home/ubuntu/create_distribution_${{ steps.findPr.outputs.number }}.json
         
 #     - name: Create a cloudfront Distribution	
 #       uses: aws-actions/configure-aws-credentials@v1
