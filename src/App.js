@@ -6,7 +6,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         
-       <Widget name="Hi Indium-POC-Results-CX test data testing data error"/>
+       <Widget name="Hi Indium-POC-Results-CX test data testing data error new test"/>
       </header>
     </div>
   );
