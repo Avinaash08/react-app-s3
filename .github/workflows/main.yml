@@ -96,9 +96,7 @@ jobs:
         aws cloudfront update-distribution --id $DISTRIBUTION_ID --if-match $ETAG --distribution-config "file://update_distribution.json"
         sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
-        
-    - id: step2
-      run: echo "::set-output name=test::$DOMAIN_NAME"
+        echo "rr_value=$(echo $DOMAIN_NAME)" >> $GITHUB_ENV
       
 #     - name: Create a cloudfront Distribution	
 #       uses: aws-actions/configure-aws-credentials@v1
@@ -106,7 +104,9 @@ jobs:
 #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
 #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #         aws-region: 'ap-south-1'
-        
+    
+    - run: echo "CF domain name is $rr_value"
+    
     - name: "Create an A record set"
       uses: Roosterfish/aws-route53-record-set-action@master
       with: 
@@ -117,4 +117,4 @@ jobs:
         aws_route53_rr_name: ${{ steps.step1.outputs.test }}
         aws_route53_rr_type: "CNAME"
         aws_route53_rr_ttl: "300"
-        aws_route53_rr_value: ${{ steps.step2.outputs.test }}
+        aws_route53_rr_value: ${{ env.rr_value }}
