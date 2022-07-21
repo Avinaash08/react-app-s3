@@ -92,7 +92,9 @@ jobs:
         echo "------------------------"
         echo " "
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
+        sleep 120
         aws cloudfront update-distribution --id $DISTRIBUTION_ID --if-match $ETAG --distribution-config "file://update_distribution.json"
+        sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
         
 #     - name: Create a cloudfront Distribution	
