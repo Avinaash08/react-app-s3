@@ -91,6 +91,7 @@ jobs:
         cat update_distribution.json
         echo "------------------------"
         echo " "
+        aws cloudfront get-distribution --id ${{ DISTRIBUTION_ID }}
         
 #     - name: Create a cloudfront Distribution	
 #       uses: aws-actions/configure-aws-credentials@v1
