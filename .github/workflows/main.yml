@@ -76,6 +76,9 @@ jobs:
     - run: |
         aws cloudfront create-distribution --origin-domain-name resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com --default-root-object index.html > create_distribution.json
         sudo apt-get install jq
+        cat create_distribution.json
+        echo "------------------"
+        echo " "
         export ETAG=`cat create_distribution.json | jq '.ETag' | tr -d \"`
         export DISTRIBUTION_ID=`cat create_distribution.json | jq '.Distribution.Id' | tr -d \"`
         export DOMAIN_NAME=`cat create_distribution.json | jq '.Distribution.DomainName' | tr -d \"`
