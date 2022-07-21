@@ -97,6 +97,9 @@ jobs:
         sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
         
+    - id: step2
+      run: echo "::set-output name=test::$DOMAIN_NAME"
+      
 #     - name: Create a cloudfront Distribution	
 #       uses: aws-actions/configure-aws-credentials@v1
 #       with:
@@ -114,4 +117,4 @@ jobs:
         aws_route53_rr_name: ${{ steps.step1.outputs.test }}
         aws_route53_rr_type: "CNAME"
         aws_route53_rr_ttl: "300"
-        aws_route53_rr_value: "d3razlz7qyp68m.cloudfront.net"
+        aws_route53_rr_value: ${{ steps.step2.outputs.test }}
