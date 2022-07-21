@@ -82,7 +82,7 @@ jobs:
         export ETAG=`cat create_distribution.json | jq '.ETag' | tr -d \"`
         export DISTRIBUTION_ID=`cat create_distribution.json | jq '.Distribution.Id' | tr -d \"`
         export DOMAIN_NAME=`cat create_distribution.json | jq '.Distribution.DomainName' | tr -d \"`
-        export ORIGIN_ID=`cat create_distribution.json | jq '.Distribution.DistributionConfig.Origins.Items.Id' | tr -d \"`
+        export ORIGIN_ID=`cat create_distribution.json | jq '.Distribution.DistributionConfig.Origins.Items.[].Id' | tr -d \"`
         export ORIGIN_PATH=`cat create_distribution.json | jq '.Distribution.DistributionConfig.Origins.Items.OriginPath' | tr -d \"`
         echo "$ETAG, $DISTRIBUTION_ID, $DOMAIN_NAME, $ORIGIN_ID, $ORIGIN_PATH"
         
