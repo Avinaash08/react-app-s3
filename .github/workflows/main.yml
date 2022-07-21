@@ -85,6 +85,12 @@ jobs:
         export ORIGIN_ID=`cat create_distribution.json | jq '.Distribution.DistributionConfig.Origins.Items[0].Id' | tr -d \"`
         export ORIGIN_PATH=`cat create_distribution.json | jq '.Distribution.DistributionConfig.Origins.Items.OriginPath' | tr -d \"`
         echo "$ETAG, $DISTRIBUTION_ID, $DOMAIN_NAME, $ORIGIN_ID, $ORIGIN_PATH"
+        export NEW_ORIGIN_PATH="/${{ steps.findPr.outputs.number }}"
+        cat create_distribution.json | jq --arg targetOriginId $ORIGIN_ID --arg newOriginPath $NEW_ORIGIN_PATH '.Distribution.DistributionConfig | .Origins.Items = (.Origins.Items | map(if (.Id == $targetOriginId) then (.OriginPath = $newOriginPath) else . end))' > update_distribution.json
+        echo "------------------------"
+        cat update_distribution.json
+        echo "------------------------"
+        echo " "
         
 #     - name: Create a cloudfront Distribution	
 #       uses: aws-actions/configure-aws-credentials@v1
