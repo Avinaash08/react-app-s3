@@ -78,8 +78,20 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: 'ap-south-1'
-    - run: 'aws cloudfront create-distribution --origin-domain-name resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com --origin-path /${{ steps.findPr.outputs.number }} --default-root-object index.html'
-        
+    - run: |
+          aws cloudfront create-distribution --origin-domain-name resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com --default-root-object index.html > create_distribution.json
+          #export CLOUDFRONT_ORIGIN_ID="resultscx-poc-s3-deployment-dynamic-url.s3.ap-south-1.amazonaws.com-1658370687-240574"
+          #export NEW_ORIGIN_PATH="/${{ steps.findPr.outputs.number }}"
+          #aws cloudfront get-distribution --id ${{ CLOUDFRONT_DISTRIBUTION_ID }} > config.json
+          #Etag=`cat config.json | jq '.ETag' | tr -d \"
+          #cat config.json | jq \
+          #--arg targetOriginId $CLOUDFRONT_ORIGIN_ID \
+          #--arg newOriginPath $NEW_ORIGIN_PATH \
+          #'.Distribution.DistributionConfig | .Origins.Items = (.Origins.Items | map(if (.Id == $targetOriginId) then (.OriginPath = $newOriginPath) else . end))' > updated-config.json
+	        #aws cloudfront get-distribution --id ${{ CLOUDFRONT_DISTRIBUTION_ID }} | grep ETag
+	        #aws cloudfront update-distribution --id ${{ CLOUDFRONT_DISTRIBUTION_ID }} --if-match $ETag --distribution-config "file://updated-config.json"
+          #aws cloudfront create-invalidation --distribution-id ${{ CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+
     - name: "Create an A record set"
       uses: Roosterfish/aws-route53-record-set-action@master
       with: 
