@@ -5,9 +5,6 @@ on:
     types: [ opened, reopened, assigned ]
     branches: [ main ]
   push:
-#     branches-ignore:
-#       - 'main'
-#     types: [created]
     branches: 
       - 'feature'
     paths:
@@ -34,19 +31,6 @@ jobs:
       
     - name: Build
       run: npm run build
-
-#     - name: Deploy
-#       uses: reggionick/s3-deploy@v3
-#       with:
-#         folder: build
-#         bucket: ${{ secrets.S3_BUCKET }}
-#         bucket-region: ${{ secrets.S3_BUCKET_REGION }}
-#         TARGET: s3://resultscx-poc-s3-deployment/folder1/
-#         dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-#         invalidation: /
-#         delete-removed: true
-#         no-cache: true
-#         private: true
     
     - uses: jwalton/gh-find-current-pr@v1
       id: findPr
@@ -97,14 +81,7 @@ jobs:
         sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
         echo "rr_value=$(echo $DOMAIN_NAME)" >> $GITHUB_ENV
-      
-#     - name: Create a cloudfront Distribution	
-#       uses: aws-actions/configure-aws-credentials@v1
-#       with:
-#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         aws-region: 'ap-south-1'
-    
+        
     - run: echo "CF domain name is $rr_value"
     
     - name: "Create an A record set"
