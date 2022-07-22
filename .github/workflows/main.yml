@@ -166,7 +166,7 @@ jobs:
       uses: atlassian/gajira-comment@master
       with:
         issue: ${{steps.get-id1.outputs.id}}
-        comment:  http://${{ steps.step1.outputs.test }}
+        comment: Testing URL is http://${{ steps.step1.outputs.test }}
       if: ${{ github.event_name == 'pull_request' }}
         
     - name: Slack Notification
