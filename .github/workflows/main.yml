@@ -91,11 +91,12 @@ jobs:
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
         aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
         echo "rr_value=$(echo $DOMAIN_NAME)" >> $GITHUB_ENV
+        echo "CF-DIST=$(echo $DISTRIBUTION_ID)" >> $GITHUB_ENV
       if: ${{ github.event_name == 'pull_request' }}
               
     - run: aws cloudfront create-invalidation --distribution-id $CF_DIST_${{ steps.findPr.outputs.number }} --paths "/*"
       if: ${{ github.event_name != 'pull_request' }}
-        
+      
     - run: echo "CF domain name is $rr_value"
     
     - name: "Create an A record set"
@@ -168,7 +169,7 @@ jobs:
 #     - name: Log created issue
 #       run: echo "Issue ${{steps.get-id1.outputs.id}} was created"
 
-    - run: export CF_DIST_${{ steps.findPr.outputs.number }}=$DISTRIBUTION_ID
+    - run: export CF_DIST_${{ steps.findPr.outputs.number }}=${{ env.CF-DIST }}
       if: ${{ github.event_name == 'pull_request' }}    
       
     - name: Comment on issue
