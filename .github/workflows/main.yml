@@ -109,6 +109,7 @@ jobs:
         aws_route53_rr_type: "CNAME"
         aws_route53_rr_ttl: "300"
         aws_route53_rr_value: ${{ env.rr_value }}
+      if: ${{ github.event_name == 'pull_request' }}
         
     - name: Add Tag to GitHub
       id: tag_version
