@@ -89,7 +89,7 @@ jobs:
         aws cloudfront update-distribution --id $DISTRIBUTION_ID --if-match $ETAG --distribution-config "file://update_distribution.json"
         #sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
-        aws cloudfront create-invalidation --distribution-id EUAGCXV6R6LI2 --paths "/*"
+        aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
         echo "rr_value=$(echo $DOMAIN_NAME)" >> $GITHUB_ENV
         
     - run: echo "CF domain name is $rr_value"
