@@ -5,9 +5,6 @@ on:
     types: [ opened, reopened, assigned ]
     branches: [ main ]
   push:
-#     branches-ignore:
-#       - 'main'
-#     types: [created]
     branches: 
       - 'feature'
     paths:
@@ -34,19 +31,6 @@ jobs:
       
     - name: Build
       run: npm run build
-
-#     - name: Deploy
-#       uses: reggionick/s3-deploy@v3
-#       with:
-#         folder: build
-#         bucket: ${{ secrets.S3_BUCKET }}
-#         bucket-region: ${{ secrets.S3_BUCKET_REGION }}
-#         TARGET: s3://resultscx-poc-s3-deployment/folder1/
-#         dist-id: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-#         invalidation: /
-#         delete-removed: true
-#         no-cache: true
-#         private: true
     
     - uses: jwalton/gh-find-current-pr@v1
       id: findPr
@@ -58,6 +42,15 @@ jobs:
       if: success() && steps.findPr.outputs.number
       env:
         PR: ${{ steps.findPr.outputs.number }}    
+        
+    - id: get-id 
+      run: |
+          id=$(echo ${{ github.event.pull_request.title }} | cut -d ' ' -f 1,2 --output-delimiter='-')
+          echo "::set-output name=id::$id" 
+      if: ${{ github.event_name == 'pull_request' }}
+      
+    - run: echo "${{steps.get-id.outputs.id}}"
+      if: ${{ github.event_name == 'pull_request' }}    
         
     - id: step1
       run: echo "::set-output name=test::trial-fe-pr-${{ steps.findPr.outputs.number }}-env.react-frontend-s3.indium-poc.co.in" 
@@ -92,18 +85,19 @@ jobs:
         echo "------------------------"
         echo " "
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
-        sleep 120
+        #sleep 120
         aws cloudfront update-distribution --id $DISTRIBUTION_ID --if-match $ETAG --distribution-config "file://update_distribution.json"
-        sleep 120
+        #sleep 120
         aws cloudfront get-distribution --id $DISTRIBUTION_ID
+        aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+        echo "rr_value=$(echo $DOMAIN_NAME)" >> $GITHUB_ENV
+      if: ${{ github.event_name == 'pull_request' }}
+              
+    - run: aws cloudfront create-invalidation --distribution-id $CF_DIST_${{ steps.findPr.outputs.number }} --paths "/*"
+      if: ${{ github.event_name != 'pull_request' }}
         
-#     - name: Create a cloudfront Distribution	
-#       uses: aws-actions/configure-aws-credentials@v1
-#       with:
-#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         aws-region: 'ap-south-1'
-        
+    - run: echo "CF domain name is $rr_value"
+    
     - name: "Create an A record set"
       uses: Roosterfish/aws-route53-record-set-action@master
       with: 
@@ -114,4 +108,83 @@ jobs:
         aws_route53_rr_name: ${{ steps.step1.outputs.test }}
         aws_route53_rr_type: "CNAME"
         aws_route53_rr_ttl: "300"
-        aws_route53_rr_value: "d3razlz7qyp68m.cloudfront.net"
+        aws_route53_rr_value: ${{ env.rr_value }}
+      if: ${{ github.event_name == 'pull_request' }}
+        
+    - name: Add Tag to GitHub
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create a GitHub release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ steps.tag_version.outputs.new_tag }}
+        name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
+        
+    - name: Jira Login
+      uses: atlassian/gajira-login@master
+      env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+# To Fetch Commit id From PUSH (PULL NEED TO CHECK)
+
+#     - name: Find in commit messages
+#       uses: atlassian/gajira-find-issue-key@master
+#       with:
+#         from: commits
+#       if: ${{ github.event_name != 'pull_request' }}
+
+# To extract Jira ISSUE from config file
+
+#     - id: step2
+#       run: |
+#         if ${{ github.event_name != 'pull_request' }}
+#         then
+#           tail -1 /home/ubuntu/jira/config.yml > /home/ubuntu/jira.txt
+#           issuekey=`cat /home/ubuntu/jira.txt`
+#           echo ${issuekey:7} > jira.txt
+#           jiraissue=`cat /home/ubuntu/jira.txt`
+#           echo "::set-output name=test::${jiraissue}"
+#         else
+#           echo "::set-output name=test::${{steps.get-id.outputs.id}}"
+#         fi
+
+# To Get Issue ID from PULL/PUSH 
+
+    - id: get-id1
+      run: |
+          id=${{steps.get-id.outputs.id}}
+          echo "::set-output name=id::$id"
+      if: ${{ github.event_name == 'pull_request' }}
+
+    - run: echo "${{steps.get-id1.outputs.id}}"
+      if: ${{ github.event_name == 'pull_request' }}
+    
+#     - name: Log created issue
+#       run: echo "Issue ${{steps.get-id1.outputs.id}} was created"
+
+    - run: export CF_DIST_${{ steps.findPr.outputs.number }}=$DISTRIBUTION_ID
+      if: ${{ github.event_name == 'pull_request' }}    
+      
+    - name: Comment on issue
+      uses: atlassian/gajira-comment@master
+      with:
+        issue: ${{steps.get-id1.outputs.id}}
+        comment: Testing URL is http://${{ steps.step1.outputs.test }}
+      if: ${{ github.event_name == 'pull_request' }}
+        
+    - name: Slack Notification
+      uses: act10ns/slack@v1
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      with: 
+        status: ${{ job.status }}
+        notify_when: 'failure'
+        channel: '#results-cx'
+        #message: Deployed {{ env.GITHUB_REF_NAME }} branch Successfully
+      if: always()
