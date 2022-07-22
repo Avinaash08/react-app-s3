@@ -43,6 +43,15 @@ jobs:
       env:
         PR: ${{ steps.findPr.outputs.number }}    
         
+    - id: get-id 
+      run: |
+          id=$(echo ${{ github.event.pull_request.title }} | cut -d ' ' -f 1,2 --output-delimiter='-')
+          echo "::set-output name=id::$id" 
+      if: ${{ github.event_name == 'pull_request' }}
+      
+    - run: echo "${{steps.get-id.outputs.id}}"
+      if: ${{ github.event_name == 'pull_request' }}    
+        
     - id: step1
       run: echo "::set-output name=test::trial-fe-pr-${{ steps.findPr.outputs.number }}-env.react-frontend-s3.indium-poc.co.in" 
       
